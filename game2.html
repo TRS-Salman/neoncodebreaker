@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Code-Breaker | Memory Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background: #050505; font-family: 'Orbitron', sans-serif; color: white; overflow: hidden; }
+        .pad-btn { transition: all 0.2s ease; border: 2px solid rgba(255,255,255,0.1); }
+        .pad-btn:active { transform: scale(0.95); }
+        .active-1 { background: #ff0055; box-shadow: 0 0 30px #ff0055; border-color: #ff0055; }
+        .active-2 { background: #00f2ff; box-shadow: 0 0 30px #00f2ff; border-color: #00f2ff; }
+        .active-3 { background: #00ff66; box-shadow: 0 0 30px #00ff66; border-color: #00ff66; }
+        .active-4 { background: #ffcc00; box-shadow: 0 0 30px #ffcc00; border-color: #ffcc00; }
+        #timer-bar { transition: width 0.1s linear; }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center h-screen">
+
+    <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold tracking-[0.3em] text-cyan-400 mb-2">CODE-BREAKER</h1>
+        <p id="status" class="text-xs text-stone-500 uppercase tracking-widest">Wait for the sequence...</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 mb-8">
+        <button id="btn-1" onclick="userClick(1)" class="pad-btn w-32 h-32 rounded-2xl bg-stone-900"></button>
+        <button id="btn-2" onclick="userClick(2)" class="pad-btn w-32 h-32 rounded-2xl bg-stone-900"></button>
+        <button id="btn-3" onclick="userClick(3)" class="pad-btn w-32 h-32 rounded-2xl bg-stone-900"></button>
+        <button id="btn-4" onclick="userClick(4)" class="pad-btn w-32 h-32 rounded-2xl bg-stone-900"></button>
+    </div>
+
+    <div class="w-64 h-2 bg-stone-800 rounded-full overflow-hidden">
+        <div id="timer-bar" class="h-full bg-cyan-400 w-full"></div>
+    </div>
+
+    <div class="mt-6 text-xl">Level: <span id="level-val" class="text-cyan-400">1</span></div>
+
+    <script>
+        let masterSequence = [];
+        let userSequence = [];
+        let level = 1;
+        let isWatching = true;
+        let timerWidth = 100;
+        let timerInterval;
+
+        const statusText = document.getElementById('status');
+        const levelText = document.getElementById('level-val');
+        const timerBar = document.getElementById('timer-bar');
+
+        function initGame() {
+            masterSequence = [];
+            nextLevel();
+        }
+
+        function nextLevel() {
+            userSequence = [];
+            isWatching = true;
+            statusText.innerText = "Watch Carefully...";
+            statusText.classList.add('text-cyan-400');
+            
+            // Add a new random step to the sequence
+            masterSequence.push(Math.floor(Math.random() * 4) + 1);
+            levelText.innerText = masterSequence.length;
+
+            playSequence();
+        }
+
+        async function playSequence() {
+            for (let num of masterSequence) {
+                await new Promise(res => setTimeout(res, 600));
+                flashButton(num);
+            }
+            await new Promise(res => setTimeout(res, 400));
+            isWatching = false;
+            statusText.innerText = "Repeat the Code!";
+            statusText.classList.remove('text-cyan-400');
+            startTimer();
+        }
+
+        function flashButton(num) {
+            const btn = document.getElementById(`btn-${num}`);
+            btn.classList.add(`active-${num}`);
+            setTimeout(() => btn.classList.remove(`active-${num}`), 400);
+        }
+
+        function userClick(num) {
+            if (isWatching) return;
+            
+            flashButton(num);
+            userSequence.push(num);
+
+            // Check correctness
+            const currentStep = userSequence.length - 1;
+            if (userSequence[currentStep] !== masterSequence[currentStep]) {
+                gameOver();
+                return;
+            }
+
+            if (userSequence.length === masterSequence.length) {
+                clearInterval(timerInterval);
+                setTimeout(nextLevel, 1000);
+            }
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerWidth = 100;
+            timerInterval = setInterval(() => {
+                timerWidth -= 1.5; // Difficulty speed
+                timerBar.style.width = timerWidth + "%";
+                if (timerWidth <= 0) {
+                    gameOver();
+                }
+            }, 100);
+        }
+
+        function gameOver() {
+            clearInterval(timerInterval);
+            statusText.innerText = "SYSTEM CRASHED";
+            statusText.classList.add('text-red-500');
+            masterSequence = [];
+            alert("Security Breach Detected! Final Level: " + (levelText.innerText));
+            location.reload();
+        }
+
+        // Start on load
+        setTimeout(initGame, 1000);
+    </script>
+</body>
+</html>
